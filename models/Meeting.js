@@ -55,6 +55,20 @@ const meetingSchema = new mongoose.Schema(
       score: Number,
       highlights: [String],
     },
+    executiveSummary: {
+      type: String,
+      default: "",
+    },
+    keyInsights: [
+      {
+        type: String,
+      },
+    ],
+    followUpQuestions: [
+      {
+        type: String,
+      },
+    ],
     keyDecisions: [
       {
         type: String,

@@ -39,10 +39,13 @@ export async function POST(request) {
       Output structure required:
       {
         "title": "A short, descriptive title for the interview",
-        "overview": "A 2-3 sentence summary of the interview",
+        "overview": "A brief overview of the interview context",
+        "executiveSummary": "A detailed 1-2 paragraph professional summary of the entire conversation, key themes, and overall impression.",
         "strengths": ["Strength 1", "Strength 2", "Strength 3"],
         "weaknesses": ["Area for improvement 1", "Area for improvement 2"],
-        "keyDecisions": ["Key keywords discussed 1", "Key keywords 2", "Important concept mentioned"],
+        "keyInsights": ["Insight 1", "Insight 2"],
+        "followUpQuestions": ["Suggested follow-up question 1", "Suggested question 2"],
+        "keyDecisions": ["Keyword 1", "Keyword 2", "Important concept"],
         "sentiment": {
           "overall": "mostly positive|neutral|mostly negative|mixed",
           "score": an integer from 0 to 100 representing positivity/confidence,
@@ -100,9 +103,12 @@ export async function POST(request) {
             type: "interview",
             title: data.title,
             overview: data.overview,
+            executiveSummary: data.executiveSummary || "",
             strengths: data.strengths || [],
             weaknesses: data.weaknesses || [],
-            keyDecisions: data.keyDecisions || [], // Reusing keyDecisions for Keywords
+            keyDecisions: data.keyDecisions || [],
+            keyInsights: data.keyInsights || [],
+            followUpQuestions: data.followUpQuestions || [],
             sentiment: data.sentiment,
             takeaways: [],
             actionItems: [],

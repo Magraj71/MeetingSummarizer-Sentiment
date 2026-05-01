@@ -35,17 +35,19 @@ export async function POST(request) {
       Analyze the following meeting transcript and provide a structured JSON output.
       
       Output structure required:
+      Output structure required:
       {
         "title": "A short, descriptive title for the meeting",
-        "overview": "A 2-3 sentence overview of what was discussed",
-        "takeaways": ["Point 1", "Point 2", "Point 3"],
+        "overview": "A brief overview of the context",
+        "executiveSummary": "A detailed 1-2 paragraph professional summary of everything discussed and decided.",
+        "takeaways": ["Main takeaway 1", "Main takeaway 2"],
         "actionItems": [
-          { "task": "What to do", "assignee": "Person name or 'Team'", "priority": "high|medium|low" }
+          { "task": "What to do", "assignee": "Person", "priority": "high|medium|low" }
         ],
         "sentiment": {
           "overall": "mostly positive|neutral|mostly negative|mixed",
           "score": an integer from 0 to 100 representing positivity,
-          "highlights": ["Quote or observation \u2192 emoji"]
+          "highlights": ["Quote \u2192 emoji"]
         },
         "keyDecisions": ["Decision 1", "Decision 2"]
       }
@@ -99,6 +101,7 @@ export async function POST(request) {
             transcript: transcript,
             title: data.title,
             overview: data.overview,
+            executiveSummary: data.executiveSummary || "",
             takeaways: data.takeaways,
             actionItems: data.actionItems,
             sentiment: data.sentiment,

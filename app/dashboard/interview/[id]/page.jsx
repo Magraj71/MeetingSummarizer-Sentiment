@@ -3,6 +3,8 @@ import { connectToDatabase } from "@/lib/mongodb";
 import Meeting from "@/models/Meeting";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ActionButtons } from "./ActionButtons";
+import { TranscriptAccordion } from "./TranscriptAccordion";
 
 // Custom Components
 const BackButton = () => (
@@ -136,6 +138,37 @@ const SentimentCard = ({ sentiment }) => {
   );
 };
 
+const InsightsCard = ({ insights, followUps }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <div className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 shadow-sm border border-[#efe5db] dark:border-neutral-800">
+      <h3 className="text-lg font-bold text-[#2c2c2c] dark:text-white mb-4 flex items-center gap-2">
+        <span className="text-blue-500">💡</span> Key Insights
+      </h3>
+      <ul className="space-y-3">
+        {insights?.map((insight, i) => (
+          <li key={i} className="text-sm text-[#555] dark:text-neutral-300 flex gap-3">
+            <span className="text-blue-400">•</span>
+            {insight}
+          </li>
+        ))}
+      </ul>
+    </div>
+    <div className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 shadow-sm border border-[#efe5db] dark:border-neutral-800">
+      <h3 className="text-lg font-bold text-[#2c2c2c] dark:text-white mb-4 flex items-center gap-2">
+        <span className="text-orange-500">❓</span> Suggested Follow-ups
+      </h3>
+      <ul className="space-y-3">
+        {followUps?.map((q, i) => (
+          <li key={i} className="text-sm text-[#555] dark:text-neutral-300 flex gap-3">
+            <span className="text-orange-400">→</span>
+            {q}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+);
+
 const KeywordsCard = ({ keywords, highlights }) => (
   <div className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 shadow-sm border border-[#efe5db] dark:border-neutral-800 h-full">
     <div className="flex items-center gap-3 mb-5 md:mb-6">
@@ -231,28 +264,7 @@ const HeaderSection = ({ title, overview, type, date }) => (
   </div>
 );
 
-const ActionButtons = ({ meetingId, onExport }) => (
-  <div className="flex flex-wrap gap-3">
-    <button
-      onClick={onExport}
-      className="px-4 py-2 bg-white dark:bg-neutral-900 border border-[#e0d6cc] dark:border-neutral-700 rounded-xl text-sm font-medium text-[#666] dark:text-neutral-400 hover:text-[#d94a4a] hover:border-[#d94a4a] transition-all flex items-center gap-2"
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-      </svg>
-      Export PDF
-    </button>
-    <button
-      onClick={() => navigator.clipboard.writeText(window.location.href)}
-      className="px-4 py-2 bg-white dark:bg-neutral-900 border border-[#e0d6cc] dark:border-neutral-700 rounded-xl text-sm font-medium text-[#666] dark:text-neutral-400 hover:text-[#d94a4a] hover:border-[#d94a4a] transition-all flex items-center gap-2"
-    >
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-      </svg>
-      Share Link
-    </button>
-  </div>
-);
+// ActionButtons has been moved to a separate client component file
 
 const LoadingSkeleton = () => (
   <main className="flex-1 bg-[#f7f3ef] dark:bg-neutral-950 p-4 sm:p-6 md:p-12">
@@ -287,12 +299,6 @@ export default async function InterviewResultPage({ params }) {
 
     const data = meeting.toObject();
 
-    const handleExport = () => {
-      // This would be a client-side function, but since this is a server component,
-      // you'd need to implement this with client-side JS or use a button component
-      console.log("Export functionality would go here");
-    };
-
     return (
       <main className="flex-1 min-h-screen bg-[#f7f3ef] dark:bg-neutral-950">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 space-y-5 sm:space-y-6 md:space-y-8">
@@ -300,22 +306,29 @@ export default async function InterviewResultPage({ params }) {
           {/* Header with navigation */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <BackButton />
-            <ActionButtons meetingId={id} onExport={handleExport} />
+            <ActionButtons meetingId={id} />
           </div>
 
-          {/* Main Header Section */}
-          <HeaderSection 
-            title={data.title}
-            overview={data.overview}
-            type={data.type || "interview"}
-            date={data.createdAt}
-          />
+          {/* Executive Summary Section */}
+          {data.executiveSummary && (
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 shadow-sm border border-[#efe5db] dark:border-neutral-800">
+              <h2 className="text-xl font-bold text-[#2c2c2c] dark:text-white mb-4">Executive Summary</h2>
+              <div className="prose dark:prose-invert max-w-none text-[#555] dark:text-neutral-300 leading-relaxed">
+                {data.executiveSummary}
+              </div>
+            </div>
+          )}
 
           {/* Strengths & Weaknesses Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <StrengthCard strengths={data.strengths} />
             <WeaknessCard weaknesses={data.weaknesses} />
           </div>
+
+          {/* Insights & Follow-ups */}
+          {(data.keyInsights?.length > 0 || data.followUpQuestions?.length > 0) && (
+            <InsightsCard insights={data.keyInsights} followUps={data.followUpQuestions} />
+          )}
 
           {/* Sentiment & Keywords Grid */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
@@ -330,31 +343,11 @@ export default async function InterviewResultPage({ params }) {
             </div>
           </div>
 
-          {/* Additional Recommendations Section */}
-          {data.recommendations?.length > 0 && (
-            <div className="bg-gradient-to-r from-[#fef8f0] to-white dark:from-neutral-900 dark:to-neutral-950 rounded-2xl sm:rounded-3xl p-5 sm:p-6 md:p-8 border border-[#f0e4d0] dark:border-neutral-800">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-full bg-[#fff4e5] dark:bg-orange-900/30 flex items-center justify-center text-xl">
-                  💡
-                </div>
-                <div>
-                  <h2 className="text-lg sm:text-xl font-bold text-[#2c2c2c] dark:text-white">Recommendations</h2>
-                  <p className="text-xs text-[#999] dark:text-neutral-500">Actionable insights for improvement</p>
-                </div>
-              </div>
-              <ul className="space-y-3">
-                {data.recommendations.map((rec, i) => (
-                  <li key={i} className="flex gap-3 text-sm sm:text-base text-[#555] dark:text-neutral-300">
-                    <span className="text-[#e6a017] mt-0.5">→</span>
-                    <span className="leading-relaxed">{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Full Transcript Section */}
+          <TranscriptAccordion transcript={data.transcript} />
 
           {/* Footer */}
-          <div className="pt-6 border-t border-[#efe5db] dark:border-neutral-800 text-center">
+          <div className="pt-6 border-t border-[#efe5db] dark:border-neutral-800 text-center pb-12">
             <p className="text-xs text-[#999] dark:text-neutral-500">
               🤖 AI-generated interview analysis • Last updated {new Date(data.updatedAt || data.createdAt).toLocaleDateString()}
             </p>
