@@ -489,12 +489,19 @@ export default function MeetingRoom() {
     };
 
     const handleConnection = (conn) => {
-      conn.on("open", () => {
+      const onOpen = () => {
         console.log("Data connection established");
         setConnectionStatus("Connected");
         dataConnectionRef.current = conn;
         setupDataConnection(conn);
-      });
+      };
+
+      if (conn.open) {
+        onOpen();
+      } else {
+        conn.on("open", onOpen);
+      }
+      
       conn.on("error", (err) => console.error("Data connection error:", err));
     };
 
@@ -523,14 +530,14 @@ export default function MeetingRoom() {
   }, []);
 
   const setupDataConnection = useCallback((conn) => {
-    conn.on("open", () => {
-      conn.on("data", (data) => {
-        addMessage({ 
-          text: data.text, 
-          sender: "Participant", 
-          timestamp: data.timestamp,
-          type: data.type 
-        });
+    // Listener for incoming data (chat or transcript)
+    conn.on("data", (data) => {
+      console.log("Received data:", data);
+      addMessage({ 
+        text: data.text, 
+        sender: "Participant", 
+        timestamp: data.timestamp,
+        type: data.type 
       });
     });
   }, [addMessage]);
