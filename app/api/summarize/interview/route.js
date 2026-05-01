@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import jwt from "jsonwebtoken";
 import { connectToDatabase } from "@/lib/mongodb";
 import Meeting from "@/models/Meeting";
@@ -14,14 +15,15 @@ export async function POST(request) {
       return NextResponse.json({ message: "Transcript is required" }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey) {
-      console.warn("GEMINI_API_KEY is not set. Returning mock data.");
+    if (!geminiKey && !groqKey) {
+      console.warn("No API Keys set. Returning mock data.");
       await new Promise(resolve => setTimeout(resolve, 2000));
       return NextResponse.json({
         title: "Mock: Technical Interview",
-        overview: "A mock interview analysis because GEMINI_API_KEY is missing.",
+        overview: "A mock interview analysis because no API keys are missing.",
         strengths: ["Clear communication", "Good problem solving"],
         weaknesses: ["Needs to improve system design", "A bit nervous"],
         keyDecisions: ["Proceed to next round"],
@@ -29,11 +31,8 @@ export async function POST(request) {
       });
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
     const prompt = `
-      Analyze the following interview/meeting transcript and provide a structured JSON output. Do not include markdown formatting or backticks, return raw JSON only.
+      Analyze the following interview/meeting transcript and provide a structured JSON output.
       
       This is a 2-way conversation between a Host and a Guest. Evaluate the conversation focusing on the candidate's/guest's performance, but also note important questions asked by the host.
 
@@ -55,8 +54,34 @@ export async function POST(request) {
       ${transcript}
     `;
 
-    const result = await model.generateContent(prompt);
-    const responseText = result.response.text();
+    let responseText = "";
+
+    try {
+      if (geminiKey) {
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ 
+          model: "gemini-2.0-flash",
+          generationConfig: { responseMimeType: "application/json" }
+        });
+        const result = await model.generateContent(prompt);
+        responseText = result.response.text();
+      } else {
+        throw new Error("No Gemini Key, trying Groq");
+      }
+    } catch (geminiError) {
+      if (groqKey) {
+        console.log("Using Groq API for interview analysis...");
+        const groq = new Groq({ apiKey: groqKey });
+        const chatCompletion = await groq.chat.completions.create({
+          messages: [{ role: "user", content: prompt }],
+          model: "llama-3.1-8b-instant", 
+          response_format: { type: "json_object" }
+        });
+        responseText = chatCompletion.choices[0]?.message?.content || "";
+      } else {
+        throw geminiError;
+      }
+    }
     
     // Clean up potential markdown formatting from Gemini
     const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();

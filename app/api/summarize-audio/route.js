@@ -9,10 +9,11 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key";
 
 export async function POST(request) {
   try {
-    const { transcript } = await request.json();
+    const formData = await request.formData();
+    const file = formData.get("file");
 
-    if (!transcript) {
-      return NextResponse.json({ message: "Transcript is required" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json({ message: "File is required" }, { status: 400 });
     }
 
     const geminiKey = process.env.GEMINI_API_KEY;
@@ -22,17 +23,25 @@ export async function POST(request) {
       console.warn("No API Keys set. Returning mock data.");
       await new Promise(resolve => setTimeout(resolve, 2000));
       return NextResponse.json({
-        title: "Mock: Team Sync",
-        overview: "This is a mock summary because no AI API keys are set in .env.local",
-        takeaways: ["Setup Groq or Gemini API to see real results", "Add MONGODB_URI for database"],
-        actionItems: [{ task: "Add GROQ_API_KEY to .env.local", assignee: "Developer", priority: "high" }],
-        sentiment: { overall: "neutral", score: 50, highlights: ["Need API key \u2192 \ud83d\ude1f"] },
-        keyDecisions: ["Use mock data for now"]
+        title: "Mock: Audio Analysis",
+        overview: "This is a mock summary for an uploaded audio file.",
+        takeaways: ["File uploaded successfully", "Need API key for real processing"],
+        actionItems: [{ task: "Configure Groq or Gemini API", assignee: "User", priority: "high" }],
+        sentiment: { overall: "neutral", score: 50, highlights: ["Upload successful -> 🚀"] },
+        keyDecisions: ["Mocking data"]
       });
     }
 
+    // Convert file to base64 inlineData
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = buffer.toString('base64');
+    
+    // Determine mime type
+    const mimeType = file.type || "audio/mp3";
+
     const prompt = `
-      Analyze the following meeting transcript and provide a structured JSON output.
+      Analyze the provided audio/video file and summarize the meeting. Provide a structured JSON output.
       
       Output structure required:
       {
@@ -49,12 +58,10 @@ export async function POST(request) {
         },
         "keyDecisions": ["Decision 1", "Decision 2"]
       }
-
-      Transcript:
-      ${transcript}
     `;
 
     let responseText = "";
+    let finalTranscript = "[Audio File Transcribed via AI]";
 
     try {
       if (geminiKey) {
@@ -63,27 +70,48 @@ export async function POST(request) {
           model: "gemini-2.0-flash",
           generationConfig: { responseMimeType: "application/json" }
         });
-        const result = await model.generateContent(prompt);
+
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: base64Data,
+              mimeType: mimeType
+            }
+          }
+        ]);
         responseText = result.response.text();
       } else {
-        throw new Error("No Gemini Key, trying Groq");
+        throw new Error("No Gemini key, falling back to Groq");
       }
     } catch (geminiError) {
       if (groqKey) {
-        console.log("Using Groq API for analysis...");
+        console.log("Using Groq API for Audio Analysis Fallback...");
         const groq = new Groq({ apiKey: groqKey });
+        
+        // Step 1: Transcribe using Whisper
+        const transcription = await groq.audio.transcriptions.create({
+          file: file,
+          model: "whisper-large-v3-turbo",
+        });
+        
+        finalTranscript = transcription.text;
+
+        // Step 2: Summarize using Llama 3.1
+        const modifiedPrompt = prompt + "\n\nTranscript:\n" + finalTranscript;
+        
         const chatCompletion = await groq.chat.completions.create({
-          messages: [{ role: "user", content: prompt }],
-          model: "llama-3.1-8b-instant", // Fast and free model
+          messages: [{ role: "user", content: modifiedPrompt }],
+          model: "llama-3.1-8b-instant",
           response_format: { type: "json_object" }
         });
+        
         responseText = chatCompletion.choices[0]?.message?.content || "";
       } else {
         throw geminiError;
       }
     }
-    
-    // Clean up potential markdown formatting from Gemini
+
     const cleanedJson = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
     const data = JSON.parse(cleanedJson);
 
@@ -96,7 +124,7 @@ export async function POST(request) {
         if (db) {
           const newMeeting = new Meeting({
             userId: decoded.id,
-            transcript: transcript,
+            transcript: finalTranscript,
             title: data.title,
             overview: data.overview,
             takeaways: data.takeaways,
@@ -105,17 +133,16 @@ export async function POST(request) {
             keyDecisions: data.keyDecisions,
           });
           await newMeeting.save();
-          data._id = newMeeting._id; // Attach ID so client can use it
+          data._id = newMeeting._id; 
         }
       }
     } catch (saveError) {
       console.error("Error saving meeting to DB:", saveError);
-      // Continue anyway, we can still return the generated data
     }
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error("AI Error:", error);
-    return NextResponse.json({ message: "Failed to summarize transcript" }, { status: 500 });
+    console.error("Audio Analysis Error:", error);
+    return NextResponse.json({ message: "Failed to process audio file. Make sure it is less than 20MB." }, { status: 500 });
   }
 }

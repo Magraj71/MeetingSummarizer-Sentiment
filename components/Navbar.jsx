@@ -64,7 +64,12 @@ export default function Navbar() {
             )}
             
             {user && (
-              <Link href="/dashboard" className="text-[#5a5a5a] dark:text-neutral-400 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors font-medium">Dashboard</Link>
+              <>
+                <Link href="/dashboard" className="text-[#5a5a5a] dark:text-neutral-400 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors font-medium">Dashboard</Link>
+                <Link href="/dashboard/history" className="text-[#5a5a5a] dark:text-neutral-400 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors font-medium">History</Link>
+                <Link href="/dashboard/workspace" className="text-[#5a5a5a] dark:text-neutral-400 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors font-medium">Workspace</Link>
+                <Link href="/dashboard/integrations" className="text-[#5a5a5a] dark:text-neutral-400 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors font-medium">Integrations</Link>
+              </>
             )}
 
             <button
@@ -122,6 +127,15 @@ export default function Navbar() {
                         </Link>
                         <Link href="/dashboard" className="flex items-center gap-3 px-4 py-2 text-sm text-[#666] dark:text-neutral-300 hover:bg-[#faf6f0] dark:hover:bg-neutral-950 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors">
                           <span>📊</span> Dashboard
+                        </Link>
+                        <Link href="/dashboard/history" className="flex items-center gap-3 px-4 py-2 text-sm text-[#666] dark:text-neutral-300 hover:bg-[#faf6f0] dark:hover:bg-neutral-950 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors">
+                          <span>🕒</span> History
+                        </Link>
+                        <Link href="/dashboard/workspace" className="flex items-center gap-3 px-4 py-2 text-sm text-[#666] dark:text-neutral-300 hover:bg-[#faf6f0] dark:hover:bg-neutral-950 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors">
+                          <span>👥</span> Workspace
+                        </Link>
+                        <Link href="/dashboard/integrations" className="flex items-center gap-3 px-4 py-2 text-sm text-[#666] dark:text-neutral-300 hover:bg-[#faf6f0] dark:hover:bg-neutral-950 hover:text-[#d94a4a] dark:hover:text-[#d94a4a] transition-colors">
+                          <span>🔌</span> Integrations
                         </Link>
                         <div className="border-t border-[#efe5db] dark:border-neutral-800 my-1"></div>
                         <button 
@@ -197,6 +211,9 @@ export default function Navbar() {
                     </div>
                   </div>
                   <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)} className="text-[#2c2c2c] dark:text-white font-medium py-2 flex items-center gap-2">📊 Dashboard</Link>
+                  <Link href="/dashboard/history" onClick={() => setIsMobileMenuOpen(false)} className="text-[#2c2c2c] dark:text-white font-medium py-2 flex items-center gap-2">🕒 History</Link>
+                  <Link href="/dashboard/workspace" onClick={() => setIsMobileMenuOpen(false)} className="text-[#2c2c2c] dark:text-white font-medium py-2 flex items-center gap-2">👥 Workspace</Link>
+                  <Link href="/dashboard/integrations" onClick={() => setIsMobileMenuOpen(false)} className="text-[#2c2c2c] dark:text-white font-medium py-2 flex items-center gap-2">🔌 Integrations</Link>
                   <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)} className="text-[#2c2c2c] dark:text-white font-medium py-2 flex items-center gap-2">👤 Profile Settings</Link>
                   <button onClick={() => { handleLogout(); setIsMobileMenuOpen(false); }} className="text-[#d94a4a] font-medium py-2 text-left flex items-center gap-2 mt-2">🚪 Sign out</button>
                 </>

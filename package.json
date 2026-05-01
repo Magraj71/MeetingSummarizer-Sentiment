@@ -16,6 +16,7 @@
     "class-variance-authority": "latest",
     "clsx": "latest",
     "framer-motion": "latest",
+    "groq-sdk": "^1.1.2",
     "html2pdf.js": "^0.14.0",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.11.0",
